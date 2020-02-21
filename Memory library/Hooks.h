@@ -2,8 +2,9 @@
 
 #include <iostream>
 #include <Windows.h>
+#include "Memory.hpp"
 
 namespace Hooks
 {
-	bool JMPHook(DWORD addr, DWORD size);
+	bool JMPHook(void* addr, void* hook, DWORD size = 5);
 }

@@ -27,7 +27,11 @@ namespace Memory
 		return (~number) + 1;
 	}
 
+	/* Calculates relative offset, size is instruction size */
+	DWORD GetRelativeOffset(DWORD to, DWORD from, DWORD size = 5);
 
+	/* Calculates the real address of a relative offset */
+	DWORD GetRealAddress(uint32_t* relativeOffset);
 }
 
 

@@ -4,6 +4,8 @@
 #include <atlconv.h>
 #include <algorithm>
 #include <cctype>
+#include <string.h>
+#include <cstring>
 
 #include <iostream>
 #include "Process.h"
@@ -16,9 +18,9 @@ Process::PROCESS Process::GetProcess(std::string const& processname, bool openpr
 
 	PROCESSENTRY32 entry;
 	entry.dwSize = sizeof(entry);
-
+	
 	std::string pname = processname;
-	std::transform(pname.begin(), pname.end(), pname.begin(), [](unsigned char c) {return tolower(c);});
+	std::transform(pname.begin(), pname.end(), pname.begin(), [](unsigned char c) {return _mbctolower(c);});
 
 	CA2W wStr(pname.c_str());
 	
@@ -162,12 +164,12 @@ Process::MODULE Process::PROCESS::GetModule(std::string const& modulename) const
 	
 	/* To lowercase.. */
 	std::string modname = modulename;
-	std::transform(modname.begin(), modname.end(), modname.begin(), [](unsigned char c) {return tolower(c);});
+	std::transform(modname.begin(), modname.end(), modname.begin(), [](unsigned char c) {return _mbctolower(c);});
 
 	for (auto const& Module : modules)
 	{
 		std::string name = Module.m_name;
-		std::transform(name.begin(), name.end(), name.begin(), [](unsigned char c) {return tolower(c);});
+		std::transform(name.begin(), name.end(), name.begin(), [](unsigned char c) {return _mbctolower(c);});
 		
 		if (name == modname)
 			return Module;
