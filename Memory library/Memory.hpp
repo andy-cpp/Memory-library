@@ -20,8 +20,6 @@ namespace Memory
 	/* Returns true if memory  is writable */
 	bool Writable(DWORD addr, DWORD size = 1);
 
-
-	
 	/* Two's Complement template */
 	template <typename T>
 	T TwosComplement(T const& number)
