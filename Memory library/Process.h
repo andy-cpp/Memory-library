@@ -36,6 +36,7 @@ public:
 	std::vector<MODULE> GetModules() const;
 	/* Gets process module by name */
 	MODULE GetModule(std::string const& modulename) const;
+
 public:
 	uint32_t m_pid = 0;
 	HANDLE m_handle = 0;

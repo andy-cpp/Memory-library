@@ -18,3 +18,22 @@ bool Hooks::JMPHook(void* addr,void* hook, DWORD size)
 
 	return true;
 }
+
+bool Hooks::VMTHookGlobal(void* object, int index, void* hook)
+{
+	uintptr_t* vTable = *(uintptr_t**)object;
+
+
+	/* Modify vTable protection */
+	DWORD Old;
+	if (!VirtualProtect((&vTable[index]), sizeof(void*), PAGE_EXECUTE_READWRITE, &Old))
+		return false;
+
+	vTable[index] = (uintptr_t)hook;
+
+	/* Restore old protection */
+	if (!VirtualProtect((&vTable[index]), sizeof(void*), Old, &Old))
+		return false;
+
+	return true;
+}

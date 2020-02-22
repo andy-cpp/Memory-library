@@ -31,7 +31,10 @@ namespace Memory
 	DWORD GetRelativeOffset(DWORD to, DWORD from, DWORD size = 5);
 
 	/* Calculates the real address of a relative offset */
-	DWORD GetRealAddress(uint32_t* relativeOffset);
+	DWORD GetRealAddress(int32_t* relativeOffset);
+
+	/* Copies function, returns pointer to the copied function */
+	void* CopyFunction(void* ptr, int size = 5);
 }
 
 

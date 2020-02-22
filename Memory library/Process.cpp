@@ -20,7 +20,6 @@ Process::PROCESS Process::GetProcess(std::string const& processname, bool openpr
 	entry.dwSize = sizeof(entry);
 	
 	std::string pname = processname;
-	std::transform(pname.begin(), pname.end(), pname.begin(), [](unsigned char c) {return _mbctolower(c);});
 
 	CA2W wStr(pname.c_str());
 	
@@ -29,7 +28,6 @@ Process::PROCESS Process::GetProcess(std::string const& processname, bool openpr
 		while (Process32Next(hSnap, &entry))
 		{
 			std::wstring entryName = entry.szExeFile;
-			std::transform(entryName.begin(), entryName.end(), entryName.begin(), [](wint_t c) {return towlower(c);});
 
 			if (StrCmpW(entry.szExeFile, wStr.m_szBuffer) == 0)
 			{
@@ -130,19 +128,18 @@ HANDLE Process::PROCESS::open() const
 std::vector<Process::MODULE> Process::PROCESS::GetModules() const
 {
 	/* Get snapshot handle */
-	HANDLE hSnap = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, 0);
+	HANDLE hSnap = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE32 | TH32CS_SNAPMODULE, m_pid);
 	if (hSnap == 0)
 		return {};
 
-
-	MODULEENTRY32 entry;
+	MODULEENTRY32W entry = { 0 };
 	entry.dwSize = sizeof(entry);
-
+	
 	std::vector<MODULE> Modules = {};
 
-	if (Module32First(hSnap, &entry))
+	if (Module32FirstW(hSnap, &entry))
 	{
-		while (Module32Next(hSnap, &entry))
+		while (Module32NextW(hSnap, &entry))
 		{
 			MODULE Module;
 			Module.dwSize = entry.modBaseSize;
@@ -154,7 +151,6 @@ std::vector<Process::MODULE> Process::PROCESS::GetModules() const
 	}
 
 	CloseHandle(hSnap);
-
 	return Modules;
 }
 
@@ -176,9 +172,4 @@ Process::MODULE Process::PROCESS::GetModule(std::string const& modulename) const
 	}
 
 	return {};
-}
-
-DWORD Process::MODULE::GetAddress(std::string const& str)
-{
-	return (DWORD)GetProcAddress((HMODULE)dwBase, str.c_str());
 }

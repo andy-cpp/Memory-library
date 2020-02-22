@@ -40,7 +40,31 @@ DWORD Memory::GetRelativeOffset(DWORD to, DWORD from, DWORD size)
 	return (to - from) - size;
 }
 
-DWORD Memory::GetRealAddress(uint32_t* relativeOffset)
+DWORD Memory::GetRealAddress(int32_t* relativeOffset)
 {
-	return (DWORD)(relativeOffset - (TwosComplement(*relativeOffset) - 4));
+	return (DWORD)((uintptr_t)relativeOffset - (TwosComplement(*(uint32_t*)relativeOffset)));
+}
+
+void* Memory::CopyFunction(void* ptr, int size)
+{
+	if (size < 5)
+		return 0;
+
+	uint8_t* pNewFunction = (uint8_t*)malloc(size + 5);
+	if (pNewFunction == 0)
+		return 0;
+	//memset(pNewFunction, 0x90, size + 5);
+	memcpy(pNewFunction, ptr, size);
+	
+	/* Set JMPBack to the original function. */
+	pNewFunction[size + 0] = 0xE9;
+	*(uintptr_t*)(pNewFunction + size + 1) = (uintptr_t)GetRelativeOffset((DWORD)ptr + size, (DWORD)pNewFunction + size);
+
+
+
+	/* Set Execute permission, so we can execute the copied function */
+	DWORD Old;
+	VirtualProtect(pNewFunction, size + 5, PAGE_EXECUTE_READWRITE, &Old);
+
+	return pNewFunction;
 }
