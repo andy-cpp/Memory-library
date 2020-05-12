@@ -6,9 +6,14 @@
 #include <cctype>
 #include <string.h>
 #include <cstring>
+#include <Psapi.h>
 
 #include <iostream>
 #include "Process.h"
+
+#include <DbgHelp.h>
+
+#pragma comment(lib, "dbghelp.lib")
 
 Process::PROCESS Process::GetProcess(std::string const& processname, bool openprocess, uint32_t processAccess)
 {
@@ -48,6 +53,30 @@ Process::PROCESS Process::GetProcess(std::string const& processname, bool openpr
 	CloseHandle(hSnap);
 
 	return {};
+}
+
+Process::PROCESS Process::GetProcess(int const& pid, bool openprocess, uint32_t processAccess)
+{
+	HANDLE hHandle = OpenProcess(processAccess, 0, pid);
+	if (hHandle == INVALID_HANDLE_VALUE)
+		return {};
+
+	HMODULE hModule = { 0 };
+
+	TCHAR szName[MAX_PATH];
+
+	GetModuleBaseName(hHandle, hModule,szName,sizeof(szName) / sizeof(TCHAR));
+
+	PROCESS process;
+	process.m_pid = pid;
+	process.m_name = CW2A(szName);
+	
+	if (openprocess)
+	{
+		process.m_handle = OpenProcess(processAccess, 0, pid);
+	}
+
+	return process;
 }
 
 std::vector<Process::PROCESS> Process::GetProcesses()
@@ -128,12 +157,12 @@ HANDLE Process::PROCESS::open() const
 std::vector<Process::MODULE> Process::PROCESS::GetModules() const
 {
 	/* Get snapshot handle */
-	HANDLE hSnap = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE32 | TH32CS_SNAPMODULE, m_pid);
+	HANDLE hSnap = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, m_pid);
 	if (hSnap == 0)
 		return {};
 
 	MODULEENTRY32W entry = { 0 };
-	entry.dwSize = sizeof(entry);
+	entry.dwSize = sizeof(entry); // 64 bit moduleentry size.
 	
 	std::vector<MODULE> Modules = {};
 
@@ -142,8 +171,8 @@ std::vector<Process::MODULE> Process::PROCESS::GetModules() const
 		while (Module32NextW(hSnap, &entry))
 		{
 			MODULE Module;
-			Module.dwSize = entry.modBaseSize;
-			Module.dwBase = (DWORD)entry.hModule;
+			Module.size = entry.modBaseSize;
+			Module.base = (uintptr_t)entry.hModule;
 			Module.m_name = CW2A(entry.szModule);
 
 			Modules.push_back(Module);
@@ -157,6 +186,11 @@ std::vector<Process::MODULE> Process::PROCESS::GetModules() const
 Process::MODULE Process::PROCESS::GetModule(std::string const& modulename) const
 {
 	auto modules = GetModules();
+
+	if (modulename.empty() && modules.size() > 0)
+	{
+		return modules[0];
+	}
 	
 	/* To lowercase.. */
 	std::string modname = modulename;
@@ -172,4 +206,14 @@ Process::MODULE Process::PROCESS::GetModule(std::string const& modulename) const
 	}
 
 	return {};
+}
+
+bool Process::PROCESS::Is64Bit() const
+{
+	return false;
+}
+
+uintptr_t Process::MODULE::GetAddress(std::string const& str)
+{
+	return (uintptr_t)GetProcAddress((HMODULE)this->base, str.c_str());
 }
